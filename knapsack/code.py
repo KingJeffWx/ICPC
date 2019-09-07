@@ -1,56 +1,58 @@
-global previous_answers
+global K
 import sys
 import copy
-sys.setrecursionlimit(150000)
-def solve(first_n, max_weight, items):
-    global previous_answers
-    if previous_answers[first_n][max_weight] != None:
-        return previous_answers[first_n][max_weight]
-    item_to_consider = items[first_n - 1]
-    if first_n == 1:
-        if max_weight >= item_to_consider["weight"]:
-            previous_answers[first_n][max_weight] = [item_to_consider["value"], [item_to_consider]]
-            return [item_to_consider["value"], [item_to_consider]]
-        else:
-            previous_answers[first_n - 1][max_weight] = [0,[]]
-            return [0,[]]
-    if max_weight >= item_to_consider["weight"]:
-        a = solve(first_n - 1, max_weight - item_to_consider["weight"], items)
-        a_value = a[0] + item_to_consider["value"]
-        a_items = a[1]
-        a_items.append(item_to_consider)
-        b = solve(first_n - 1, max_weight, items)
-        b_value = b[0]
-        b_items = b[1]
-        max_value = max(a_value, b_value)
-        if max_value == a_value:
-            previous_answers[first_n][max_weight] = copy.deepcopy([a_value, a_items])
-            return [a_value, a_items]
-        else:
-            previous_answers[first_n][max_weight] = copy.deepcopy([b_value, b_items])
-            return [b_value, b_items]
-    else:
-        previous_answers[first_n - 1][max_weight] = [0,[]]
-        return [0,[]]
-        # a = solve(first_n - 1, max_weight, items)
-        # previous_answers[first_n][max_weight] = copy.deepcopy(a)
-        # return a
+def solve(W, items):
+    global K
+    # print(K)
+    n = len(items)
+    for i in range(n+1): 
+        for w in range(W+1): 
+            if i==0 or w==0: 
+                K[i][w] = 0
+            elif items[i-1]["weight"] <= w: 
+                # print(items[i-1]["value"])
+                # print(K[i-1][w-items[i-1]["weight"]])
+                K[i][w] = max(items[i-1]["value"] + K[i-1][w-items[i-1]["weight"]],  K[i-1][w])
+            else: 
+                K[i][w] = K[i-1][w] 
+    return K[n][W] 
+  
 
 while(True):
-    global previous_answers
+    global K
     try:
         max_weight, num_items = map(int, input().split())
     except:
         break
     items = []
-    previous_answers = [[None for i in range(max_weight + 1)] for i in range(num_items + 1)]
+    K = [[0 for i in range(max_weight + 1)] for i in range(num_items + 1)]
     for i in range(num_items):
         value, weight = map(int, input().split())
         items.append({"value": value, "weight": weight, "item_num":i})
-    items.sort(key=lambda x: x["weight"], reverse=True)
-    items = solve(num_items, max_weight, items)[1]
-    print(len(items))
+    # done inputing values
+    max_value = solve(max_weight, items)
+    if max_value == 0:
+        print(0)
+        print("\n")
+    else:
+        num_items = 1
+        current_weight = max_weight
+        current_value = max_value
+        n = len(items)
+        items_chosen = []
+        while current_value != 0:
+            if current_weight >= items[n - 1]["weight"]:
+                if K[n - 1][current_weight] == current_value:
+                    n = n - 1
+                elif K[n - 1][current_weight - items[n - 1]["weight"]] == current_value - items[n - 1]["value"]:
+                    items_chosen.append(n - 1)
+                    current_weight -= items[n - 1]["weight"]
+                    current_value -= items[n - 1]["value"]
+                    n = n - 1
+            else:
+                n = n -1
+    print(len(items_chosen))
     string = ""
-    for item in items:
-        string += str(item["item_num"]) + " "
+    for item in items_chosen:
+        string += str(item) + " "
     print(string[:-1])
